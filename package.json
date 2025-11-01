@@ -1,0 +1,22 @@
+{
+  "name": "restfull-api-market",
+  "version": "1.0.0",
+  "description": "A simple RESTful API using Node.js and Express",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "start:prod": "NODE _ENV=production node index.js",
+    "start:dev": "NODE_ENV=development node index.js",
+    "start:test": "NODE_ENV=test node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
+  }
+}
