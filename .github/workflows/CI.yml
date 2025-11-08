@@ -1,0 +1,188 @@
+name: build and test feature branch (nodejs)
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  build-feature:
+    name: Build & Test feature branch
+    runs-on: ubuntu-latest
+    outputs:
+      build-result: ${{ steps.set-result.outputs.result }}
+    steps:
+      #############################################################
+      # 1- Checkout code from feature branch
+      #############################################################
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      #############################################################
+      # 2- Setup Node.js
+      #############################################################
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'        # ajusta versión si necesitas otra
+          cache: 'npm'
+
+      #############################################################
+      # 3- Cache node modules (optional extra) - actions/setup-node handles npm cache,
+      #    pero dejamos un cache adicional por si usas yarn/pnpm u otros artefactos
+      #############################################################
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json', '**/yarn.lock', '**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      #############################################################
+      # 4- Install dependencies
+      #############################################################
+      - name: Install dependencies
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            pnpm install --frozen-lockfile
+          elif [ -f yarn.lock ] && [ -f package.json ]; then
+            npm install -g yarn
+            yarn install --frozen-lockfile
+          else
+            npm ci
+          fi
+
+      #############################################################
+      # 5- Lint (falla si hay errores)
+      #############################################################
+      - name: Run lint
+        if: ${{ hashFiles('**/.eslintrc*', '**/package.json') != '' }}
+        run: |
+          if npm run -s lint --version >/dev/null 2>&1; then
+            npm run lint
+          else
+            echo "No hay script 'lint' en package.json, se omite."
+          fi
+
+      #############################################################
+      # 6- Type-check (si usas TypeScript)
+      #############################################################
+      # - name: Type-check (tsc)
+      #   if: ${{ always() }}
+      #   run: |
+      #     if [ -f tsconfig.json ]; then
+      #       npx -y tsc --noEmit
+      #     else
+      #       echo "No se detectó tsconfig.json — se omite type-check."
+      #     fi
+
+      #############################################################
+      # 7- Run tests (falla si hay tests fallidos)
+      #############################################################
+      # - name: Run tests
+      #   run: |
+      #     # se asume script "test" en package.json
+      #     npm test -- --ci || npm test
+
+      #############################################################
+      # 8- Upload test results (si existen) como artifact
+      #############################################################
+      # - name: Upload test results (if any)
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: test-results-${{ github.event.number }}
+      #     path: |
+      #       test-results.xml
+      #       junit.xml
+      #       coverage
+      #       coverage/**
+
+      #############################################################
+      # 9- Build (si existe script build)
+      #############################################################
+      - name: Build (if present)
+        run: |
+          if npm run -s build --version >/dev/null 2>&1; then
+            npm run build
+          else
+            echo "No hay script 'build' en package.json, se omite."
+          fi
+
+      #############################################################
+      # 10- Set output result (para job dependiente)
+      #############################################################
+      - name: Set build result output
+        id: set-result
+        run: echo "::set-output name=result::success"
+
+  #######################################################
+  # Automatic merge to develop branch (si build-feature OK)
+  #######################################################
+  merge-feature-into-develop:
+    name: Merge feature into develop
+    runs-on: ubuntu-latest
+    needs: build-feature
+    if: ${{ needs.build-feature.result == 'success' && github.event.pull_request.head.repo.full_name == github.repository }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      ########################################################
+      # 1- Checkout develop branch (fetch full history)
+      ########################################################
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          fetch-depth: 0
+
+      ########################################################
+      # 2- Configure git user
+      ########################################################
+      - name: Configure git
+        run: |
+          git config user.email "workflow-bot@example.com"
+          git config user.name "workflow-bot"
+
+      ########################################################
+      # 3- Merge feature branch into develop
+      ########################################################
+      - name: Merge feature into develop
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git fetch origin +refs/heads/${{ github.event.pull_request.head.ref }}:refs/remotes/origin/${{ github.event.pull_request.head.ref }}
+          git merge --no-ff --no-edit origin/${{ github.event.pull_request.head.ref }} || {
+            echo "Merge conflict or merge failed"; exit 1;
+          }
+
+      ########################################################
+      # 4- Push changes after merge
+      ########################################################
+      - name: Push merge to develop
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.base_ref }}
+
+      ########################################################
+      # 5- Optional: Trigger downstream workflow (repository_dispatch)
+      ########################################################
+      - name: Trigger publish artifact workflow
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          event-type: publish-artifact-event
+          client-payload: '{"base_branch": "${{ github.base_ref }}", "source_pr": "${{ github.event.number }}"}'
