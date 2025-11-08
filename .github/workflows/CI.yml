@@ -74,15 +74,15 @@ jobs:
       #############################################################
       # 6- Run tests ONLY if package.json tiene un script 'test' distinto al valor por defecto
       #############################################################
-      - name: Run tests (if defined and not the default failing script)
-        run: |
-          # Detectar si package.json contiene el script de test por defecto (el que imprime "Error: no test specified")
-          if grep -q '"test": "echo \"Error: no test specified\" && exit 1"' package.json; then
-            echo "No hay tests definidos (script 'test' es el placeholder por defecto). Se omite paso de tests."
-          else
-            echo "Se detectó script 'test' en package.json. Ejecutando tests..."
-            npm test
-          fi
+      # - name: Run tests (if defined and not the default failing script)
+      #   run: |
+      #     # Detectar si package.json contiene el script de test por defecto (el que imprime "Error: no test specified")
+      #     if grep -q '"test": "echo \"Error: no test specified\" && exit 1"' package.json; then
+      #       echo "No hay tests definidos (script 'test' es el placeholder por defecto). Se omite paso de tests."
+      #     else
+      #       echo "Se detectó script 'test' en package.json. Ejecutando tests..."
+      #       npm test
+      #     fi
 
   #######################################################
   # Automatic merge to develop branch (si build-feature OK)

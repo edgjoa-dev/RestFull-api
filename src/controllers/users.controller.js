@@ -3,7 +3,7 @@ const { request, response } = require('express');
 const usersGet = (req = request, res = response) => {
     res.status(200).json(
         {
-            msg: 'API GET - ALL',
+            msg: 'Get all users',
         }
     )
 };
