@@ -9,7 +9,14 @@ class Server {
     constructor() {
         this.app = express();
         this.port = process.env.PORT;
+
+        //Routes
+        this.usersPath = '/api/users'
+
+        //Middlewares
         this.middlewares();
+
+        //Routes
         this.routes();
     };
 
@@ -19,7 +26,7 @@ class Server {
     };
 
     routes() {
-        this.app.get('/api', (req, res) => { res.send(' Hola Mundo ') });
+        this.app.use(this.usersPath, require('./routes/users'));
     };
 
     listen() {
