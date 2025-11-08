@@ -1,5 +1,7 @@
-require("dotenv").config({ path: "./src/config/.env" });
+require("dotenv").config({ path: "./.env" });
 const express = require('express');
+
+const cors = require('cors')
 const path = require('path');
 
 class Server {
@@ -12,6 +14,7 @@ class Server {
     };
 
     middlewares() {
+        this.app.use(cors());
         this.app.use(express.static(path.join(__dirname, 'public')));
     };
 
