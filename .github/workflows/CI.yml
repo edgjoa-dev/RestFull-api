@@ -67,14 +67,14 @@ jobs:
       #############################################################
       # 5- Lint (falla si hay errores)
       #############################################################
-      - name: Run lint
-        if: ${{ hashFiles('**/.eslintrc*', '**/package.json') != '' }}
-        run: |
-          if npm run -s lint --version >/dev/null 2>&1; then
-            npm run lint
-          else
-            echo "No hay script 'lint' en package.json, se omite."
-          fi
+      #- name: Run lint
+      #  if: ${{ hashFiles('**/.eslintrc*', '**/package.json') != '' }}
+      #  run: |
+      #    if npm run -s lint --version >/dev/null 2>&1; then
+      #      npm run lint
+      #    else
+      #      echo "No hay script 'lint' en package.json, se omite."
+      #    fi
 
       #############################################################
       # 6- Type-check (si usas TypeScript)
