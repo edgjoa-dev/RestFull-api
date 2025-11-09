@@ -1,9 +1,16 @@
 const { request, response } = require('express');
 
 const usersGet = (req = request, res = response) => {
+
+    const {name, lastname, page, limit = 1 } = req.query
+
     res.status(200).json(
         {
             msg: 'Get all users',
+            name,
+            lastname,
+            page,
+            limit,
         }
     )
 };
@@ -31,9 +38,13 @@ const createUser = (req = request, res = response) => {
 
 
 const updateUser = (req = request, res = response) => {
+
+    const id = req.params.id
+
     res.status(200).json(
         {
             msg: 'API GET - update user',
+            id
         }
     )
 };
