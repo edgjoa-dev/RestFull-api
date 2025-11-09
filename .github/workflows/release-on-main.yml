@@ -1,0 +1,66 @@
+name: Create Release on main
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create tag and GitHub Release (on main)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js (for reading package.json)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Read version from package.json
+        id: read_version
+        run: |
+          if [ ! -f package.json ]; then
+            echo "package.json not found"; exit 1
+          fi
+          ver=$(node -e "console.log(require('./package.json').version || '')")
+          if [ -z "$ver" ]; then
+            echo "No version field found in package.json"; exit 1
+          fi
+          echo "version=$ver" >> $GITHUB_OUTPUT
+          echo "Tag to create: v$ver"
+
+      - name: Check if tag already exists on remote
+        id: check_tag
+        run: |
+          TAG="v${{ steps.read_version.outputs.version }}"
+          if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag $TAG already exists on remote. Skipping tag creation."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag $TAG does not exist. Will create."
+          fi
+
+      - name: Create annotated tag and push (if not exists)
+        if: ${{ steps.check_tag.outputs.exists == 'false' }}
+        run: |
+          TAG="v${{ steps.read_version.outputs.version }}"
+          git config user.email "workflow-bot@example.com"
+          git config user.name "workflow-bot"
+          git tag -a "$TAG" -m "Release $TAG (automática desde workflow)"
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} refs/tags/$TAG
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: "v${{ steps.read_version.outputs.version }}"
+          name: "v${{ steps.read_version.outputs.version }}"
+          body: "Release automática generada por workflow (push a main). Commit: ${{ github.sha }}"
+          draft: false
+          prerelease: false
