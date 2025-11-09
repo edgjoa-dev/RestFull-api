@@ -21,7 +21,13 @@ class Server {
     };
 
     middlewares() {
+        //Lectura y parseo de body
+        this.app.use(express.json());
+
+        //Configuración de CORSS
         this.app.use(cors());
+
+        //Directorio Publico
         this.app.use(express.static(path.join(__dirname, 'public')));
     };
 

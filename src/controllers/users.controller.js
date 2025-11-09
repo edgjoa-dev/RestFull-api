@@ -17,9 +17,14 @@ const userGet = (req = request, res = response) => {
 };
 
 const createUser = (req = request, res = response) => {
+
+    const { name, lastname } = req.body;
+
     res.status(200).json(
         {
-            msg: 'API GET - user created',
+            msg: 'Usuario obtenido',
+            name,
+            lastname,
         }
     )
 };
