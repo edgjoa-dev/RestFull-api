@@ -154,15 +154,13 @@ jobs:
       needs: merge-feature-into-develop # Se ejecuta después del job de merge
       if: ${{ always() }} # Siempre se ejecuta para notificar éxito o fallo
       steps:
-        - name: Notify Slack
-          uses: Ilshidur/action-slack@v3
-          with:
-            webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
-            msg: |
-              :rocket: **Merge to develop complete!**
-              *Pull Request*: <${{ github.event.pull_request.html_url }}|#${{ github.event.number }} - ${{ github.event.pull_request.title }}>
-              *Source branch*: `${{ github.event.pull_request.head.ref }}`
-              *Target branch*: `${{ github.base_ref }}`
-            # Icono y nombre de usuario para el mensaje
-            slack-username: 'GitHub Actions Bot'
-            slack-icon-emoji: ':github:'
+        - name: Slack Notification
+          uses: rtCamp/action-slack-notify@v2
+          env:
+            SLACK_CHANNEL: general
+            SLACK_COLOR: ${{ job.status }} # or a specific color like 'good' or '#ff00ff'
+            SLACK_ICON: https://github.com/rtCamp.png?size=48
+            SLACK_MESSAGE: 'Post Content :rocket:'
+            SLACK_TITLE: Post Title
+            SLACK_USERNAME: rtCamp
+            SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
