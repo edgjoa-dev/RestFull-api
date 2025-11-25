@@ -1,6 +1,4 @@
-const Server = require("./server");
-
-
+import Server from './server.js';
 
 const server = new Server();
 server.listen();

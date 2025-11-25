@@ -74,15 +74,15 @@ jobs:
       #############################################################
       # 6- Run tests ONLY if package.json tiene un script 'test' distinto al valor por defecto
       #############################################################
-      # - name: Run tests (if defined and not the default failing script)
-      #   run: |
-      #     # Detectar si package.json contiene el script de test por defecto (el que imprime "Error: no test specified")
-      #     if grep -q '"test": "echo \"Error: no test specified\" && exit 1"' package.json; then
-      #       echo "No hay tests definidos (script 'test' es el placeholder por defecto). Se omite paso de tests."
-      #     else
-      #       echo "Se detectó script 'test' en package.json. Ejecutando tests..."
-      #       npm test
-      #     fi
+      - name: Run tests (if defined and not the default failing script)
+        run: |
+          # Detectar si package.json contiene el script de test por defecto (el que imprime "Error: no test specified")
+          if grep -q '"test": "echo \"Error: no test specified\" && exit 1"' package.json; then
+            echo "No hay tests definidos (script 'test' es el placeholder por defecto). Se omite paso de tests."
+          else
+            echo "Se detectó script 'test' en package.json. Ejecutando tests..."
+            npm test
+          fi
 
   #######################################################
   # Automatic merge to develop branch (si build-feature OK)
@@ -145,3 +145,27 @@ jobs:
           event-type: publish-artifact-event
           client-payload: '{"base_branch": "${{ github.base_ref }}", "source_pr": "${{ github.event.number }}"}'
 
+  #######################################################
+  # Notificación de Slack después del merge (opcional)
+  #######################################################
+  slack-notification:
+      name: Send Slack Notification
+      runs-on: ubuntu-latest
+      needs: merge-feature-into-develop # Se ejecuta después del job de merge
+      if: ${{ always() }} # Siempre se ejecuta para notificar éxito o fallo
+      steps:
+        - name: Notify Slack
+          uses: slackapi/slack-notify-action@v1.2.0
+          with:
+            # Se usa el token/webhook almacenado en tus Secrets
+            slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+            # El contenido del mensaje
+            slack-message: |
+             :rocket: **Merge a develop completado!**
+             *Workflow*: ${{ github.workflow }} - **Estatus**: ${{ job.status }}
+             *Pull Request*: <${{ github.event.pull_request.html_url }}|#${{ github.event.number }} - ${{ github.event.pull_request.title }}>
+             *Rama fuente*: `${{ github.event.pull_request.head.ref }}`
+             *Rama destino*: `${{ github.base_ref }}`
+            # Icono y nombre de usuario para el mensaje
+            slack-username: 'GitHub Actions Bot'
+            slack-icon-emoji: ':github:'
