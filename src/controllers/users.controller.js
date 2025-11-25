@@ -1,6 +1,7 @@
-const { request, response } = require('express');
+//const { request, response } = require('express');
+import { request, response} from "express";
 
-const usersGet = (req = request, res = response) => {
+export const usersGet = (req = request, res = response) => {
 
     const {name, lastname, page, limit = 1 } = req.query
 
@@ -15,7 +16,7 @@ const usersGet = (req = request, res = response) => {
     )
 };
 
-const userGet = (req = request, res = response) => {
+export const userGet = (req = request, res = response) => {
     res.status(200).json(
         {
             msg: 'API GET - ID',
@@ -23,7 +24,7 @@ const userGet = (req = request, res = response) => {
     )
 };
 
-const createUser = (req = request, res = response) => {
+export const createUser = (req = request, res = response) => {
 
     const { name, lastname } = req.body;
 
@@ -37,7 +38,7 @@ const createUser = (req = request, res = response) => {
 };
 
 
-const updateUser = (req = request, res = response) => {
+export const updateUser = (req = request, res = response) => {
 
     const id = req.params.id
 
@@ -49,7 +50,7 @@ const updateUser = (req = request, res = response) => {
     )
 };
 
-const deleteUser = (req = request, res = response) => {
+export const deleteUser = (req = request, res = response) => {
     res.status(200).json(
         {
             msg: 'API GET - user deleted',
@@ -58,10 +59,3 @@ const deleteUser = (req = request, res = response) => {
 };
 
 
-module.exports = {
-    usersGet,
-    userGet,
-    createUser,
-    updateUser,
-    deleteUser
-};
