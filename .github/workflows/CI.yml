@@ -151,7 +151,7 @@ jobs:
   slack-notification:
       name: Send Slack Notification
       runs-on: ubuntu-latest
-      needs: merge-feature-into-develop # Se ejecuta después del job de merge
+      needs: merge-feature-into-develop
       if: ${{ always() }} # Siempre se ejecuta para notificar éxito o fallo
       steps:
         - name: Slack Notification
