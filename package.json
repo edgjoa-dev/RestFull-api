@@ -19,6 +19,9 @@
     "express": "^5.1.0"
   },
   "devDependencies": {
-    "jest": "^29.7.0"
+    "@swc/core": "^1.15.3",
+    "@swc/jest": "^0.2.39",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
   }
 }

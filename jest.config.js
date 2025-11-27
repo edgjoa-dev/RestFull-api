@@ -3,8 +3,12 @@
 /** @type {import('jest').Config} */
 const config = {
     testEnvironment: 'node',
-    // No se necesita 'transform' si tus pruebas y tu código fuente usan ESM nativo
-    // y estás en una versión de Node.js que lo soporta (como la v20 que usas).
+    // Para asegurar la compatibilidad con ES Modules, jest.mock y las importaciones,
+    // usamos @swc/jest para transformar el código antes de ejecutar los tests.
+    // Esto es más robusto que el soporte nativo de ESM de Jest.
+    transform: {
+        '^.+\\.js$': '@swc/jest',
+    },
 };
 
 export default config;
