@@ -6,6 +6,8 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import usersRouter from './routes/users.js';
+import { dbConnection } from './database/config.db.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,9 +16,12 @@ class Server {
     constructor() {
         this.app = express();
         this.port = process.env.PORT || 3000;
-
-        // Routes
+        
+        //Routes
         this.usersPath = '/api/users';
+
+        //DB coection
+        this.dbConnection();
 
         // Middlewares
         this.middlewares();
@@ -24,6 +29,11 @@ class Server {
         // Routes
         this.routes();
     }
+
+    //Conexión a la base de datos
+    async dbConnection() {
+        await dbConnection();
+    };
 
     middlewares() {
         // Lectura y parseo de body

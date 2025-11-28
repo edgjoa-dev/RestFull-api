@@ -1,11 +1,21 @@
 import request from "supertest";
-import Server from "../server.js";
+import { jest } from '@jest/globals';
+
+// Mockeamos la conexión a la base de datos ANTES de importar el servidor.
+// Esto asegura que cuando el servidor intente conectarse, use nuestra versión falsa.
+jest.unstable_mockModule('../database/config.db.js', () => ({
+    dbConnection: jest.fn().mockResolvedValue(), // Simula una conexión exitosa que no hace nada.
+    resetConnectionPromise: jest.fn(),
+}));
+
+// Importamos dinámicamente el servidor DESPUÉS de definir el mock.
+const Server = (await import('../server.js')).default;
 
 describe("Users API", () => {
     let app;
 
-    beforeAll(() => {
-        const server = new Server();
+    beforeAll(async () => {
+        const server = new Server(); // Ahora esto usará la dbConnection mockeada
         app = server.app;
     });
 
