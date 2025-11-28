@@ -78,6 +78,8 @@ jobs:
         # El comando `npm test` falla si el script es el de por defecto.
         # `|| true` asegura que el workflow no se detenga si no hay tests definidos.
         # Si los tests existen y fallan, el paso fallará igualmente, que es el comportamiento deseado.
+        env:
+          MONGO_URL: ${{ secrets.MONGO_URL }}
         run: |
           echo "Ejecutando npm test..."
           npm test || (
