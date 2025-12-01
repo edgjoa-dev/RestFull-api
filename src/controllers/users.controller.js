@@ -1,5 +1,10 @@
 //const { request, response } = require('express');
 import { request, response} from "express";
+import { User } from "../models/index.js";
+import bcrypt from 'bcrypt'
+
+
+
 
 export const usersGet = (req = request, res = response) => {
 
@@ -24,15 +29,31 @@ export const userGet = (req = request, res = response) => {
     )
 };
 
-export const createUser = (req = request, res = response) => {
+export const createUser = async(req = request, res = response) => {
 
-    const { name, lastname } = req.body;
+    const { name, lastname, email, password, role } = req.body;
+    const user = new User({ name, lastname, email, password, role });
 
-    res.status(200).json(
+    //Verificar si email existe
+    const emailExists = await User.findOne({ email });
+    if (emailExists) {
+        return res.status(400).json({
+            msg: 'Email already exists',
+        });
+    };
+
+    //Hashear contraseña
+    const salt = bcrypt.genSaltSync();
+    user.password = bcrypt.hashSync(password, salt);
+
+
+    //guardar en db
+    await user.save();
+
+    res.status(201).json(
         {
-            msg: 'Usuario obtenido',
-            name,
-            lastname,
+            msg: 'Usuario creado',
+            user,
         }
     )
 };
@@ -42,9 +63,9 @@ export const updateUser = (req = request, res = response) => {
 
     const id = req.params.id
 
-    res.status(200).json(
+    res.status(201).json(
         {
-            msg: 'API GET - update user',
+            msg: 'User updated',
             id
         }
     )

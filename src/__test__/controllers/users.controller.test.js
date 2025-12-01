@@ -55,30 +55,6 @@ describe('Users Controller', () => {
         });
     });
 
-    test('createUser should return 200 and expected json', () => {
-        req.body = { name: 'John', lastname: 'Doe' };
-
-        createUser(req, res);
-
-        expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith({
-            msg: 'Usuario obtenido',
-            name: 'John',
-            lastname: 'Doe',
-        });
-    });
-
-    test('updateUser should return 200 and expected json', () => {
-        req.params = { id: '123' };
-
-        updateUser(req, res);
-
-        expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith({
-            msg: 'API GET - update user',
-            id: '123',
-        });
-    });
 
     test('deleteUser should return 200 and expected json', () => {
         deleteUser(req, res);

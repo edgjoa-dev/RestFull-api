@@ -6,7 +6,7 @@ const UserSchema = new Schema({
         type: String,
         required: true
     },
-    mail: {
+    email: {
         type: String,
         required: [true, 'Email is required']
     },
@@ -32,5 +32,4 @@ const UserSchema = new Schema({
     }
 })
 
-
-module.exports = model('User', UserSchema)
+export const User = model('User', UserSchema);
