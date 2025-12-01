@@ -44,7 +44,7 @@ describe('User Routes', () => {
     });
 
     test('POST /api/users should call createUser controller', async () => {
-        const newUser = { name: 'John', lastname: 'Doe' };
+        const newUser = { name: 'John', email: 'john@example.com', password: 'password123', role: 'USER_ROLE' };
         const response = await request(app).post('/api/users').send(newUser);
         expect(createUser).toHaveBeenCalled();
         expect(response.status).toBe(200);
