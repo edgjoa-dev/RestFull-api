@@ -1,5 +1,5 @@
 //const { request, response } = require('express');
-import { request, response} from "express";
+import { request, response } from "express";
 import { User } from "../models/index.js";
 import bcrypt from 'bcrypt'
 
@@ -8,7 +8,7 @@ import bcrypt from 'bcrypt'
 
 export const usersGet = (req = request, res = response) => {
 
-    const {name, lastname, page, limit = 1 } = req.query
+    const { name, lastname, page, limit = 1 } = req.query
 
     res.status(200).json(
         {
@@ -29,18 +29,10 @@ export const userGet = (req = request, res = response) => {
     )
 };
 
-export const createUser = async(req = request, res = response) => {
+export const createUser = async (req = request, res = response) => {
 
     const { name, lastname, email, password, role } = req.body;
     const user = new User({ name, lastname, email, password, role });
-
-    //Verificar si email existe
-    const emailExists = await User.findOne({ email });
-    if (emailExists) {
-        return res.status(400).json({
-            msg: 'Email already exists',
-        });
-    };
 
     //Hashear contraseña
     const salt = bcrypt.genSaltSync();

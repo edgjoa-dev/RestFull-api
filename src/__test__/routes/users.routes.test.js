@@ -16,6 +16,9 @@ jest.unstable_mockModule('../../controllers/users.controller.js', () => mockUser
 jest.unstable_mockModule('../../models/Role.model.js', () => ({
     Role: { findOne: jest.fn() }
 }));
+jest.unstable_mockModule('../../models/User.model.js', () => ({
+    User: { findOne: jest.fn() }
+}));
 
 // Dynamic import of the router (which imports the controller)
 const { default: usersRouter } = await import('../../routes/users.js');
@@ -27,6 +30,7 @@ app.use('/api/users', usersRouter);
 
 // Import the mocked model to control it in tests
 const { Role } = await import('../../models/Role.model.js');
+const { User } = await import('../../models/User.model.js');
 
 describe('User Routes', () => {
     beforeEach(() => {
@@ -51,9 +55,11 @@ describe('User Routes', () => {
 
     test('POST /api/users should call createUser controller', async () => {
         const newUser = { name: 'Juan', email: 'test1@test.com', password: '123456789', role: 'USER_ROLE' };
-        
+
         // Simulate that the role exists in the database
         Role.findOne.mockResolvedValue({ role: 'USER_ROLE' });
+        // Simulate that the email does not exist in the database
+        User.findOne.mockResolvedValue(null);
 
         const response = await request(app).post('/api/users').send(newUser);
         expect(createUser).toHaveBeenCalled();
@@ -77,74 +83,97 @@ describe('User Routes', () => {
 
     // ---------- Tests adicionales para escenarios negativos y errores ----------
 
-test('POST /api/users should return 400 when name is missing', async () => {
-    const newUser = { email: 'no-name@test.com', password: '123456789', role: 'USER_ROLE' };
+    test('POST /api/users should return 400 when name is missing', async () => {
+        const newUser = { email: 'no-name@test.com', password: '123456789', role: 'USER_ROLE' };
 
-    // Aseguramos que el Role existe para que la validación del role no sea la que falle aquí
-    Role.findOne.mockResolvedValueOnce({ role: 'USER_ROLE' });
+        // Aseguramos que el Role existe para que la validación del role no sea la que falle aquí
+        Role.findOne.mockResolvedValueOnce({ role: 'USER_ROLE' });
+        // El email no importa para este test, pero el validador se ejecutará
+        User.findOne.mockResolvedValueOnce(null);
 
-    const response = await request(app).post('/api/users').send(newUser);
+        const response = await request(app).post('/api/users').send(newUser);
 
-    // createUser NO debe ser llamado porque la validación falla antes
-    expect(createUser).not.toHaveBeenCalled();
-    expect(response.status).toBe(400);
-    // Sólo comprobamos que hay errores en el body (forma común de fieldValidator)
-    expect(response.body).toBeDefined();
-});
+        // createUser NO debe ser llamado porque la validación falla antes
+        expect(createUser).not.toHaveBeenCalled();
+        expect(response.status).toBe(400);
+        // Sólo comprobamos que hay errores en el body (forma común de fieldValidator)
+        expect(response.body).toBeDefined();
+    });
 
-test('POST /api/users should return 400 when email is invalid', async () => {
-    const newUser = { name: 'NoEmail', email: 'not-an-email', password: '123456789', role: 'USER_ROLE' };
+    test('POST /api/users should return 400 when email is invalid', async () => {
+        const newUser = { name: 'NoEmail', email: 'not-an-email', password: '123456789', role: 'USER_ROLE' };
 
-    Role.findOne.mockResolvedValueOnce({ role: 'USER_ROLE' });
+        Role.findOne.mockResolvedValueOnce({ role: 'USER_ROLE' });
+        // El validador de formato de email se ejecuta antes que el de existencia
+        // User.findOne.mockResolvedValueOnce(null);
 
-    const response = await request(app).post('/api/users').send(newUser);
+        const response = await request(app).post('/api/users').send(newUser);
 
-    expect(createUser).not.toHaveBeenCalled();
-    expect(response.status).toBe(400);
-    expect(response.body).toBeDefined();
-});
+        expect(createUser).not.toHaveBeenCalled();
+        expect(response.status).toBe(400);
+        expect(response.body).toBeDefined();
+    });
 
-test('POST /api/users should return 400 when password too short', async () => {
-    const newUser = { name: 'ShortPass', email: 'short@pass.com', password: '12345', role: 'USER_ROLE' };
+    test('POST /api/users should return 400 when password too short', async () => {
+        const newUser = { name: 'ShortPass', email: 'short@pass.com', password: '12345', role: 'USER_ROLE' };
 
-    Role.findOne.mockResolvedValueOnce({ role: 'USER_ROLE' });
+        Role.findOne.mockResolvedValueOnce({ role: 'USER_ROLE' });
+        User.findOne.mockResolvedValueOnce(null);
 
-    const response = await request(app).post('/api/users').send(newUser);
+        const response = await request(app).post('/api/users').send(newUser);
 
-    expect(createUser).not.toHaveBeenCalled();
-    expect(response.status).toBe(400);
-    expect(response.body).toBeDefined();
-});
+        expect(createUser).not.toHaveBeenCalled();
+        expect(response.status).toBe(400);
+        expect(response.body).toBeDefined();
+    });
 
-test('POST /api/users should return 400 when role does not exist', async () => {
-    const newUser = { name: 'NoRole', email: 'norole@test.com', password: '123456789', role: 'UNKNOWN_ROLE' };
+    test('POST /api/users should return 400 when role does not exist', async () => {
+        const newUser = { name: 'NoRole', email: 'norole@test.com', password: '123456789', role: 'UNKNOWN_ROLE' };
 
-    // Simular que Role.findOne no encuentra el rol
-    Role.findOne.mockResolvedValueOnce(null);
+        // Simular que Role.findOne no encuentra el rol
+        Role.findOne.mockResolvedValueOnce(null);
+        User.findOne.mockResolvedValueOnce(null);
 
-    const response = await request(app).post('/api/users').send(newUser);
+        const response = await request(app).post('/api/users').send(newUser);
 
-    // El controlador no debe ser llamado porque la validación del role falla
-    expect(createUser).not.toHaveBeenCalled();
-    expect(response.status).toBe(400);
-    expect(response.body).toBeDefined();
-});
+        // El controlador no debe ser llamado porque la validación del role falla
+        expect(createUser).not.toHaveBeenCalled();
+        expect(response.status).toBe(400);
+        expect(response.body).toBeDefined();
+    });
 
-test('POST /api/users should return 500 if controller throws an unexpected error', async () => {
-    const newUser = { name: 'Explode', email: 'explode@test.com', password: '123456789', role: 'USER_ROLE' };
+    test('POST /api/users should return 400 when email already exists', async () => {
+        const newUser = { name: 'Dupe', email: 'dupe@test.com', password: '123456789', role: 'USER_ROLE' };
 
-    // Asegurar que el role existe para pasar validaciones
-    Role.findOne.mockResolvedValueOnce({ role: 'USER_ROLE' });
+        // Simular que el rol existe para que esa validación no falle
+        Role.findOne.mockResolvedValueOnce({ role: 'USER_ROLE' });
+        // ¡Importante! Simular que el email YA EXISTE en la BD
+        User.findOne.mockResolvedValueOnce({ email: 'dupe@test.com' });
 
-    // Hacemos que el mock del controlador lance un error la primera vez que sea llamado
-    createUser.mockImplementationOnce(() => { throw new Error('Unexpected failure'); });
+        const response = await request(app).post('/api/users').send(newUser);
 
-    const response = await request(app).post('/api/users').send(newUser);
+        // El controlador no debe ser llamado porque la validación del email falla
+        expect(createUser).not.toHaveBeenCalled();
+        expect(response.status).toBe(400);
+        expect(response.body).toBeDefined();
+    });
 
-    expect(createUser).toHaveBeenCalled();
-    // Express por defecto responde 500 ante excepciones no capturadas
-    expect(response.status).toBe(500);
-    expect(response.body).toBeDefined();
-});
+    test('POST /api/users should return 500 if controller throws an unexpected error', async () => {
+        const newUser = { name: 'Explode', email: 'explode@test.com', password: '123456789', role: 'USER_ROLE' };
+
+        // Asegurar que el role existe para pasar validaciones
+        Role.findOne.mockResolvedValueOnce({ role: 'USER_ROLE' });
+        User.findOne.mockResolvedValueOnce(null);
+
+        // Hacemos que el mock del controlador lance un error la primera vez que sea llamado
+        createUser.mockImplementationOnce(() => { throw new Error('Unexpected failure'); });
+
+        const response = await request(app).post('/api/users').send(newUser);
+
+        expect(createUser).toHaveBeenCalled();
+        // Express por defecto responde 500 ante excepciones no capturadas
+        expect(response.status).toBe(500);
+        expect(response.body).toBeDefined();
+    });
 
 });
