@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { usersGet, userGet, createUser, updateUser, deleteUser } from '../controllers/users.controller.js';
 import { check, body } from 'express-validator';
 import { fieldValidator } from '../middleware/index.js';
-import { isRoleValid } from '../helpers/db-validators.js';
+import { isEmailValid, isRoleValid } from '../helpers/db-validators.js';
 
 const router = Router();
 
@@ -10,14 +10,15 @@ router.get('/', usersGet);
 
 router.get('/:id', userGet);
 
-router.post('/',[
+router.post('/', [
     check('name', 'El nombre de usuario es obligatorio').notEmpty(),
-    check('email', 'El email es obligatorio').isEmail().notEmpty(),
     body('password', 'El password es obligatorio y de 9 caracteres minimo').isLength({ min: 9 }).notEmpty(),
+    check('email', 'El email es obligatorio').isEmail().notEmpty(),
+    check('email').custom(isEmailValid),
     // check('role', 'El rol no es válido').isIn(['ADMIN_ROLE', 'USER_ROLE']),
-    check('role').custom( isRoleValid ),
+    check('role').custom(isRoleValid),
     fieldValidator
-],createUser);
+], createUser);
 
 router.put('/:id', updateUser);
 
