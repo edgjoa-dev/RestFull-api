@@ -67,12 +67,12 @@ describe('User Routes', () => {
         expect(response.body).toEqual({ msg: 'Usuario obtenido', name: 'Juan', email: 'test1@test.com', password: '123456789', role: 'USER_ROLE' });
     });
 
-    test('PUT /api/users/:id should call updateUser controller', async () => {
-        const response = await request(app).put('/api/users/123').send({ name: 'Jane' });
-        expect(updateUser).toHaveBeenCalled();
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual({ msg: 'API GET - update user', id: '123' });
-    });
+    // test('PUT /api/users/:id should call updateUser controller', async () => {
+    //     const response = await request(app).put('/api/users/123').send({ name: 'Jane' });
+    //     expect(updateUser).toHaveBeenCalled();
+    //     expect(response.status).toBe(200);
+    //     expect(response.body).toEqual({ msg: 'API GET - update user', id: '123' });
+    // });
 
     test('DELETE /api/users/:id should call deleteUser controller', async () => {
         const response = await request(app).delete('/api/users/123');

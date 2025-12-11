@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { usersGet, userGet, createUser, updateUser, deleteUser } from '../controllers/users.controller.js';
 import { check, body } from 'express-validator';
 import { fieldValidator } from '../middleware/index.js';
-import { isEmailValid, isRoleValid } from '../helpers/db-validators.js';
+import { isEmailValid, isIdValid, isRoleValid } from '../helpers/db-validators.js';
 
 const router = Router();
 
@@ -20,7 +20,12 @@ router.post('/', [
     fieldValidator
 ], createUser);
 
-router.put('/:id', updateUser);
+router.put('/:id', [
+    check('id','No es in ID válido').isMongoId(),
+    check('id').custom(isIdValid),
+    check('role').custom(isRoleValid),
+    fieldValidator
+], updateUser);
 
 router.delete('/:id', deleteUser);
 
