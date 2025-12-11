@@ -54,11 +54,9 @@ export const createUser = async (req = request, res = response) => {
 export const updateUser = async (req = request, res = response) => {
 
     const id = req.params.id
-    const { email, password, google, ...rest } = req.body
+    const { _id, email, password, google, ...rest } = req.body
 
     //TODO - validar contra DB
-
-
     if (password) {
         const salt = bcrypt.genSaltSync();
         rest.password = bcrypt.hashSync(password, salt);
