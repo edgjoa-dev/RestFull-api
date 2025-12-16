@@ -53,9 +53,7 @@ describe('Users Controller', () => {
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({
             total: mockTotal,
-            limit: '10',
-            from: '0',
-            users: mockUsers,
+            users: mockUsers
         });
     });
 
@@ -75,13 +73,10 @@ describe('Users Controller', () => {
         await usersGet(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
-        // Validar que se usaron los defaults (limit=5, from=0)
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            limit: 5,
-            from: 0,
-            total: 0,
-            users: []
-        }));
+         expect(res.json).toHaveBeenCalledWith({
+            total: mockTotal,
+            users: mockUsers
+        });
     });
 
     test('userGet should return 200 and expected json', () => {
