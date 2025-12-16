@@ -5,21 +5,20 @@ import bcrypt from 'bcrypt'
 
 
 
-export const usersGet = async(req = request, res = response) => {
+export const usersGet = async (req = request, res = response) => {
 
     const { limit = 5, from = 0 } = req.query;
 
-    const users = await User.find({ status: true })
-        .skip(Number(from))
-        .limit(Number(limit))
-
-    const total = await User.countDocuments({ status: true });
+    const [ total, users ] = await Promise.all([
+        await User.countDocuments({ status: true }),
+        await User.find({ status: true })
+            .skip(Number(from))
+            .limit(Number(limit)),
+    ])
 
     res.status(200).json(
         {
             total,
-            limit,
-            from,
             users,
         }
     )

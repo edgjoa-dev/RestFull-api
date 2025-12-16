@@ -51,9 +51,7 @@ describe("Users API Integration", () => {
         const response = await request(app).get("/api/users");
 
         expect(response.statusCode).toBe(200);
-        // La estructura real es { total, limit, from, users }
-        expect(response.body).toHaveProperty("total", mockTotal);
-        expect(response.body).toHaveProperty("users");
+        expect(response.body.total).toBe(mockTotal);
         expect(response.body.users).toHaveLength(1);
         expect(response.body.users[0]).toMatchObject({ name: 'Test User' });
     });
