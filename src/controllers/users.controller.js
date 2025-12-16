@@ -1,4 +1,3 @@
-//const { request, response } = require('express');
 import { request, response } from "express";
 import { User } from "../models/index.js";
 import bcrypt from 'bcrypt'
@@ -6,17 +5,22 @@ import bcrypt from 'bcrypt'
 
 
 
-export const usersGet = (req = request, res = response) => {
+export const usersGet = async(req = request, res = response) => {
 
-    const { name, lastname, page, limit = 1 } = req.query
+    const { limit = 5, from = 0 } = req.query;
+
+    const users = await User.find({ status: true })
+        .skip(Number(from))
+        .limit(Number(limit))
+
+    const total = await User.countDocuments({ status: true });
 
     res.status(200).json(
         {
-            msg: 'Get all users',
-            name,
-            lastname,
-            page,
+            total,
             limit,
+            from,
+            users,
         }
     )
 };
