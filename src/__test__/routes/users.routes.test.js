@@ -50,7 +50,10 @@ describe('User Routes', () => {
     });
 
     test('GET /api/users/:id should call userGet controller', async () => {
-        const response = await request(app).get('/api/users/123');
+        const validId = '63d1f1c24d15671788223123';
+        User.findById.mockResolvedValueOnce({ _id: validId, status: true }); // Para el validador isIdValid
+
+        const response = await request(app).get(`/api/users/${validId}`);
         expect(userGet).toHaveBeenCalled();
         expect(response.status).toBe(200);
         expect(response.body).toEqual({ msg: 'API GET - ID' });

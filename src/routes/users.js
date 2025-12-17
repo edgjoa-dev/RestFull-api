@@ -8,7 +8,11 @@ const router = Router();
 
 router.get('/', usersGet);
 
-router.get('/:id', userGet);
+router.get('/:id', [
+    check('id','No es in ID válido').isMongoId(),
+    check('id').custom(isIdValid),
+    fieldValidator
+],userGet);
 
 router.post('/', [
     check('name', 'El nombre de usuario es obligatorio').notEmpty(),
