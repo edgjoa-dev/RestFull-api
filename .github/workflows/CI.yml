@@ -74,15 +74,17 @@ jobs:
       #############################################################
       # 6- Run tests ONLY if package.json tiene un script 'test' distinto al valor por defecto
       #############################################################
-      # - name: Run tests (if defined and not the default failing script)
-      #   run: |
-      #     # Detectar si package.json contiene el script de test por defecto (el que imprime "Error: no test specified")
-      #     if grep -q '"test": "echo \"Error: no test specified\" && exit 1"' package.json; then
-      #       echo "No hay tests definidos (script 'test' es el placeholder por defecto). Se omite paso de tests."
-      #     else
-      #       echo "Se detectó script 'test' en package.json. Ejecutando tests..."
-      #       npm test
-      #     fi
+      - name: Run tests (if defined and not the default failing script)
+        # El comando `npm test` falla si el script es el de por defecto.
+        # `|| true` asegura que el workflow no se detenga si no hay tests definidos.
+        # Si los tests existen y fallan, el paso fallará igualmente, que es el comportamiento deseado.
+        env:
+          MONGO_URL: ${{ secrets.MONGO_URL }}
+        run: |
+          echo "Ejecutando npm test..."
+          npm test || (
+            echo "El comando 'npm test' falló. Si no hay tests definidos, esto es normal. Si hay tests, necesitan ser corregidos." && exit 1
+          )
 
   #######################################################
   # Automatic merge to develop branch (si build-feature OK)
@@ -145,3 +147,21 @@ jobs:
           event-type: publish-artifact-event
           client-payload: '{"base_branch": "${{ github.base_ref }}", "source_pr": "${{ github.event.number }}"}'
 
+  #######################################################
+  # Notificación de Slack después del merge (opcional)
+  #######################################################
+  slack-notification:
+      name: Send Slack Notification
+      runs-on: ubuntu-latest
+      needs: merge-feature-into-develop
+      if: ${{ always() }} # Siempre se ejecuta para notificar éxito o fallo
+      steps:
+        - name: Slack Notification
+          uses: rtCamp/action-slack-notify@v2
+          env:
+            SLACK_CHANNEL: restfull-api-nodejs
+            SLACK_COLOR: ${{ job.status }} # or a specific color like 'good' or '#ff00ff'
+            SLACK_MESSAGE: 'Post Content :rocket:'
+            SLACK_TITLE: Post Title
+            SLACK_USERNAME: rtCamp
+            SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

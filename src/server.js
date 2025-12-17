@@ -1,46 +1,60 @@
-require("dotenv").config({ path: "./.env" });
-const express = require('express');
+import dotenv from 'dotenv';
+dotenv.config({ path: './.env' });
 
-const cors = require('cors')
-const path = require('path');
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import usersRouter from './routes/users.js';
+import { dbConnection } from './database/config.db.js';
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class Server {
-
     constructor() {
         this.app = express();
-        this.port = process.env.PORT;
-
+        this.port = process.env.PORT || 3000;
+        
         //Routes
-        this.usersPath = '/api/users'
+        this.usersPath = '/api/users';
 
-        //Middlewares
+        //DB coection
+        this.dbConnection();
+
+        // Middlewares
         this.middlewares();
 
-        //Routes
+        // Routes
         this.routes();
+    }
+
+    //Conexión a la base de datos
+    async dbConnection() {
+        await dbConnection();
     };
 
     middlewares() {
-        //Lectura y parseo de body
+        // Lectura y parseo de body
         this.app.use(express.json());
 
-        //Configuración de CORSS
+        // Configuración de CORS
         this.app.use(cors());
 
-        //Directorio Publico
+        // Directorio Público
         this.app.use(express.static(path.join(__dirname, 'public')));
-    };
+    }
 
     routes() {
-        this.app.use(this.usersPath, require('./routes/users'));
-    };
+        this.app.use(this.usersPath, usersRouter);
+    }
 
     listen() {
         this.app.listen(this.port, () => {
             console.log(`Servidor corriendo en puerto: ${this.port}`);
         });
-    };
-
+    }
 }
 
-module.exports = Server;
+export default Server;

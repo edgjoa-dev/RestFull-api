@@ -1,67 +1,103 @@
-const { request, response } = require('express');
+import { request, response } from "express";
+import { User } from "../models/index.js";
+import bcrypt from 'bcrypt'
 
-const usersGet = (req = request, res = response) => {
 
-    const {name, lastname, page, limit = 1 } = req.query
+
+
+export const usersGet = async (req = request, res = response) => {
+
+    const { limit = 5, from = 0 } = req.query;
+
+    const [total, users] = await Promise.all([
+        await User.countDocuments({ status: true }),
+        await User.find({ status: true })
+            .skip(Number(from))
+            .limit(Number(limit)),
+    ])
 
     res.status(200).json(
         {
-            msg: 'Get all users',
-            name,
-            lastname,
-            page,
-            limit,
+            total,
+            users,
         }
     )
 };
 
-const userGet = (req = request, res = response) => {
+export const userGet = async (req = request, res = response) => {
+    const { id } = req.params;
+
+    const user = await User.findById(id)
+        .select('-password -_id -google -status');
+
+    if ( !user || user.status === false ) {
+        return res.status(400).json({
+            msg: 'El usuario no existe'
+        });
+    }
+
+
     res.status(200).json(
         {
-            msg: 'API GET - ID',
+            user,
         }
     )
 };
 
-const createUser = (req = request, res = response) => {
+export const createUser = async (req = request, res = response) => {
 
-    const { name, lastname } = req.body;
+    const { name, lastname, email, password, role } = req.body;
+    const user = new User({ name, lastname, email, password, role });
 
-    res.status(200).json(
+    //Hashear contraseña
+    const salt = bcrypt.genSaltSync();
+    user.password = bcrypt.hashSync(password, salt);
+
+
+    //guardar en db
+    await user.save();
+
+    res.status(201).json(
         {
-            msg: 'Usuario obtenido',
-            name,
-            lastname,
+            msg: 'Usuario creado',
+            user,
         }
     )
 };
 
 
-const updateUser = (req = request, res = response) => {
+export const updateUser = async (req = request, res = response) => {
 
     const id = req.params.id
+    const { _id, email, password, google, ...rest } = req.body
 
-    res.status(200).json(
+    if (password) {
+        const salt = bcrypt.genSaltSync();
+        rest.password = bcrypt.hashSync(password, salt);
+    }
+
+    const user = await User.findByIdAndUpdate(id, rest)
+
+    res.status(201).json(
         {
-            msg: 'API GET - update user',
-            id
+            msg: 'User updated',
+            user
         }
     )
 };
 
-const deleteUser = (req = request, res = response) => {
+export const deleteUser = async (req = request, res = response) => {
+
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(id, { status: false });
+
     res.status(200).json(
         {
-            msg: 'API GET - user deleted',
+            msg: 'User deleted',
+            user,
         }
     )
 };
 
 
-module.exports = {
-    usersGet,
-    userGet,
-    createUser,
-    updateUser,
-    deleteUser
-};
