@@ -16,7 +16,7 @@ jest.unstable_mockModule('../../models/index.js', () => ({
 }));
 
 // Importar el controlador DESPUÉS de definir los mocks
-const { usersGet, userGet, deleteUser } = await import('../../controllers/users.controller.js');
+const { usersGet, userGet, deleteUser, updateUser } = await import('../../controllers/users.controller.js');
 
 describe('Users Controller', () => {
     let req, res;
@@ -73,7 +73,7 @@ describe('Users Controller', () => {
         await usersGet(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
-         expect(res.json).toHaveBeenCalledWith({
+        expect(res.json).toHaveBeenCalledWith({
             total: mockTotal,
             users: mockUsers
         });
@@ -88,12 +88,51 @@ describe('Users Controller', () => {
         });
     });
 
-    test('deleteUser should return 200 and expected json', () => {
-        deleteUser(req, res);
+    test('deleteUser should return 200 and expected json', async () => {
+        await deleteUser(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({
-            msg: 'API GET - user deleted',
+            msg: 'User deleted',
+            user: undefined, // Since we didn't mock findByIdAndUpdate to return anything
         });
+    });
+
+    test('updateUser should return 201 and update user', async () => {
+        const mockUpdatedUser = { name: 'Updated Name' };
+        mockUserClass.findByIdAndUpdate.mockResolvedValue(mockUpdatedUser);
+
+        req.params.id = '123';
+        req.body = { name: 'Updated Name', role: 'ADMIN_ROLE' };
+
+        await updateUser(req, res);
+
+        expect(mockUserClass.findByIdAndUpdate).toHaveBeenCalledWith('123', { name: 'Updated Name', role: 'ADMIN_ROLE' });
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(res.json).toHaveBeenCalledWith({
+            msg: 'User updated',
+            user: mockUpdatedUser
+        });
+    });
+
+    test('updateUser should hash password if provided', async () => {
+        const mockUpdatedUser = { name: 'Updated Name' };
+        mockUserClass.findByIdAndUpdate.mockResolvedValue(mockUpdatedUser);
+
+        req.params.id = '123';
+        req.body = { password: 'newpassword123' };
+
+        await updateUser(req, res);
+
+        // Verify password was hashed (we can't easily check the hash value without mocking bcrypt specifically, but we can check it's not the plain text)
+        // Since we didn't mock bcrypt here, it uses the real one or we should import and mock it.
+        // The controller imports bcrypt. Let's rely on the fact that the 'rest' object passed to findByIdAndUpdate contains the hashed password.
+
+        expect(mockUserClass.findByIdAndUpdate).toHaveBeenCalled();
+        const updateArgs = mockUserClass.findByIdAndUpdate.mock.calls[0][1];
+        expect(updateArgs.password).toBeDefined();
+        expect(updateArgs.password).not.toBe('newpassword123');
+
+        expect(res.status).toHaveBeenCalledWith(201);
     });
 });

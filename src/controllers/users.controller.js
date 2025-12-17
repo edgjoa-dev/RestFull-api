@@ -59,7 +59,6 @@ export const updateUser = async (req = request, res = response) => {
     const id = req.params.id
     const { _id, email, password, google, ...rest } = req.body
 
-    //TODO - validar contra DB
     if (password) {
         const salt = bcrypt.genSaltSync();
         rest.password = bcrypt.hashSync(password, salt);
@@ -75,10 +74,16 @@ export const updateUser = async (req = request, res = response) => {
     )
 };
 
-export const deleteUser = (req = request, res = response) => {
+export const deleteUser = async(req = request, res = response) => {
+
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(id, { status: false });
+
     res.status(200).json(
         {
-            msg: 'API GET - user deleted',
+            msg: 'User deleted',
+            user,
         }
     )
 };
