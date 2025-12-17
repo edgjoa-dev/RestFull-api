@@ -17,7 +17,10 @@ jest.unstable_mockModule('../../models/Role.model.js', () => ({
     Role: { findOne: jest.fn() }
 }));
 jest.unstable_mockModule('../../models/User.model.js', () => ({
-    User: { findOne: jest.fn() }
+    User: {
+        findOne: jest.fn(),
+        findById: jest.fn(),
+    }
 }));
 
 // Dynamic import of the router (which imports the controller)
@@ -67,19 +70,6 @@ describe('User Routes', () => {
         expect(response.body).toEqual({ msg: 'Usuario obtenido', name: 'Juan', email: 'test1@test.com', password: '123456789', role: 'USER_ROLE' });
     });
 
-    // test('PUT /api/users/:id should call updateUser controller', async () => {
-    //     const response = await request(app).put('/api/users/123').send({ name: 'Jane' });
-    //     expect(updateUser).toHaveBeenCalled();
-    //     expect(response.status).toBe(200);
-    //     expect(response.body).toEqual({ msg: 'API GET - update user', id: '123' });
-    // });
-
-    test('DELETE /api/users/:id should call deleteUser controller', async () => {
-        const response = await request(app).delete('/api/users/123');
-        expect(deleteUser).toHaveBeenCalled();
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual({ msg: 'API GET - user deleted' });
-    });
 
     // ---------- Tests adicionales para escenarios negativos y errores ----------
 
@@ -173,6 +163,75 @@ describe('User Routes', () => {
         expect(createUser).toHaveBeenCalled();
         // Express por defecto responde 500 ante excepciones no capturadas
         expect(response.status).toBe(500);
+        expect(response.body).toBeDefined();
+    });
+
+    // ---------- Tests for PUT /api/users/:id ----------
+
+    test('PUT /api/users/:id should call updateUser controller', async () => {
+        const updateData = { name: 'Updated', role: 'USER_ROLE' };
+        Role.findOne.mockResolvedValueOnce({ role: 'USER_ROLE' });
+
+        // We need a valid MongoID for the validation middleware to pass (if using check('id', 'No es un ID válido').isMongoId())
+        const validId = '63d1f1c24d15671788223123';
+
+        // Mock findById for isIdValid validator
+        User.findById.mockResolvedValueOnce({ _id: validId, name: 'Existing User' });
+
+        const response = await request(app).put(`/api/users/${validId}`).send(updateData);
+
+        expect(updateUser).toHaveBeenCalled();
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ msg: 'API GET - update user', id: '123' });
+    });
+
+    test('PUT /api/users/:id should return 400 for invalid MongoID', async () => {
+        const updateData = { name: 'Updated' };
+        const invalidId = '123';
+
+        const response = await request(app).put(`/api/users/${invalidId}`).send(updateData);
+
+        expect(updateUser).not.toHaveBeenCalled();
+        expect(response.status).toBe(400);
+        // Expect validation errors
+        expect(response.body).toBeDefined();
+    });
+
+    test('PUT /api/users/:id should return 400 for invalid role', async () => {
+        const updateData = { role: 'INVALID_ROLE' };
+        const validId = '63d1f1c24d15671788223123';
+
+        User.findById.mockResolvedValueOnce({ _id: validId });
+        Role.findOne.mockResolvedValueOnce(null);
+
+        const response = await request(app).put(`/api/users/${validId}`).send(updateData);
+
+        expect(updateUser).not.toHaveBeenCalled();
+        expect(response.status).toBe(400);
+    });
+
+    // ---------- Tests for DELETE /api/users/:id ----------
+
+    test('DELETE /api/users/:id should call deleteUser controller', async () => {
+        const validId = '63d1f1c24d15671788223123';
+
+        // Mock user existence check if middleware checks it (e.g. check('id').custom(existeUsuarioPorId))
+        User.findById.mockResolvedValueOnce({ _id: validId, status: true });
+
+        const response = await request(app).delete(`/api/users/${validId}`);
+
+        expect(deleteUser).toHaveBeenCalled();
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ msg: 'API GET - user deleted' });
+    });
+
+    test('DELETE /api/users/:id should return 400 for invalid MongoID', async () => {
+        const invalidId = '123';
+
+        const response = await request(app).delete(`/api/users/${invalidId}`);
+
+        expect(deleteUser).not.toHaveBeenCalled();
+        expect(response.status).toBe(400);
         expect(response.body).toBeDefined();
     });
 
