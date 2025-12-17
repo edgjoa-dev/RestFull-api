@@ -9,6 +9,9 @@ const mockUserClass = jest.fn(() => mockUserInstance);
 mockUserClass.find = jest.fn();
 mockUserClass.countDocuments = jest.fn();
 mockUserClass.findByIdAndUpdate = jest.fn();
+mockUserClass.findById = jest.fn().mockReturnValue({
+    select: jest.fn().mockResolvedValue({ name: 'Test User', status: true })
+});
 
 // Mock del módulo models/index.js
 jest.unstable_mockModule('../../models/index.js', () => ({
@@ -79,12 +82,12 @@ describe('Users Controller', () => {
         });
     });
 
-    test('userGet should return 200 and expected json', () => {
-        userGet(req, res);
+    test('userGet should return 200 and expected json', async () => {
+        await userGet(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({
-            msg: 'API GET - ID',
+            user: { name: 'Test User', status: true }
         });
     });
 
@@ -123,10 +126,6 @@ describe('Users Controller', () => {
         req.body = { password: 'newpassword123' };
 
         await updateUser(req, res);
-
-        // Verify password was hashed (we can't easily check the hash value without mocking bcrypt specifically, but we can check it's not the plain text)
-        // Since we didn't mock bcrypt here, it uses the real one or we should import and mock it.
-        // The controller imports bcrypt. Let's rely on the fact that the 'rest' object passed to findByIdAndUpdate contains the hashed password.
 
         expect(mockUserClass.findByIdAndUpdate).toHaveBeenCalled();
         const updateArgs = mockUserClass.findByIdAndUpdate.mock.calls[0][1];

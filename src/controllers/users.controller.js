@@ -9,7 +9,7 @@ export const usersGet = async (req = request, res = response) => {
 
     const { limit = 5, from = 0 } = req.query;
 
-    const [ total, users ] = await Promise.all([
+    const [total, users] = await Promise.all([
         await User.countDocuments({ status: true }),
         await User.find({ status: true })
             .skip(Number(from))
@@ -24,10 +24,22 @@ export const usersGet = async (req = request, res = response) => {
     )
 };
 
-export const userGet = (req = request, res = response) => {
+export const userGet = async (req = request, res = response) => {
+    const { id } = req.params;
+
+    const user = await User.findById(id)
+        .select('-password -_id -google -status');
+
+    if ( !user || user.status === false ) {
+        return res.status(400).json({
+            msg: 'El usuario no existe'
+        });
+    }
+
+
     res.status(200).json(
         {
-            msg: 'API GET - ID',
+            user,
         }
     )
 };
@@ -74,7 +86,7 @@ export const updateUser = async (req = request, res = response) => {
     )
 };
 
-export const deleteUser = async(req = request, res = response) => {
+export const deleteUser = async (req = request, res = response) => {
 
     const { id } = req.params;
 
