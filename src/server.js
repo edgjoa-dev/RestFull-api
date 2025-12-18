@@ -5,8 +5,8 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import usersRouter from './routes/users.js';
 import { dbConnection } from './database/config.db.js';
+import { authRouter, usersRouter } from './routes/index.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,8 +16,9 @@ class Server {
     constructor() {
         this.app = express();
         this.port = process.env.PORT || 3000;
-        
+
         //Routes
+        this.authPath = '/api/auth';
         this.usersPath = '/api/users';
 
         //DB coection
@@ -47,6 +48,7 @@ class Server {
     }
 
     routes() {
+        this.app.use(this.authPath, authRouter);
         this.app.use(this.usersPath, usersRouter);
     }
 
