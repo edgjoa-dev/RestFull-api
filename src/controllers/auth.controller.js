@@ -1,6 +1,7 @@
 import { request, response } from "express";
 import { User } from "../models/index.js";
 import bcrypt from "bcrypt";
+import { generateJWT } from "../helpers/generateJWT.js";
 
 
 
@@ -34,11 +35,12 @@ export const login = async (req = request, res = response) => {
         }
 
         //-Generar el JWT
-
+        const token = await generateJWT(user.id);
 
 
         res.status(200).json({
-            msg: 'Login exitoso'
+            user,
+            token
         });
 
     } catch (error) {
