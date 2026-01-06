@@ -34,7 +34,11 @@ const UserSchema = new Schema({
 
 //Quitar password de objeto en el retorno de creación de usuario.
 UserSchema.methods.toJSON = function() {
-    const { __v, password, ...user } = this.toObject();
+    const { __v, password, _id, ...user } = this.toObject();
+
+    //Cambio de _id a uid.
+    user.uid = _id;
+
     return user;
 }
 
