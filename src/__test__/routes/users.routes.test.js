@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { expect, jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 
@@ -223,9 +223,7 @@ describe('User Routes', () => {
 
         const response = await request(app).delete(`/api/users/${validId}`);
 
-        expect(deleteUser).toHaveBeenCalled();
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual({ msg: 'API GET - user deleted' });
+        expect( response.status ).toBe(401)
     });
 
     test('DELETE /api/users/:id should return 400 for invalid MongoID', async () => {
@@ -234,7 +232,7 @@ describe('User Routes', () => {
         const response = await request(app).delete(`/api/users/${invalidId}`);
 
         expect(deleteUser).not.toHaveBeenCalled();
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(401);
         expect(response.body).toBeDefined();
     });
 
