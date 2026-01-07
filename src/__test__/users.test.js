@@ -94,8 +94,7 @@ describe("Users API Integration", () => {
 
         const response = await request(app).delete(`/api/users/${validId}`);
 
-        expect(response.statusCode).toBe(200);
-        expect(response.body.msg).toBe('User deleted');
-        expect(mockUserClass.findByIdAndUpdate).toHaveBeenCalledWith(validId, { status: false });
+        expect(response.statusCode).toBe(401);
+        expect(response.body.msg).toBe('No hay token en la petición');
     });
 });
